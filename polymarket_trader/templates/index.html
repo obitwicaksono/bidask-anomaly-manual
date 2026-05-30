@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Trading Bot - Crypto UP/DOWN 5M</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚀 Polymarket Trading Bot</h1>
+            <p class="subtitle">Crypto UP/DOWN 5 Menit - CLOB V2</p>
+            
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="btnLiveMode">LIVE Trading</button>
+                <button class="mode-btn" id="btnSimMode">SIMULATION</button>
+            </div>
+            
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Simulation Control Panel (hidden by default) -->
+        <section class="sim-control-panel" id="simControlPanel" style="display: none;">
+            <h2>🎮 Simulation Controls</h2>
+            <div class="sim-stats">
+                <div class="sim-stat">
+                    <div class="stat-label">Initial Balance</div>
+                    <div class="stat-value" id="simInitialBalance">$1000.00</div>
+                </div>
+                <div class="sim-stat">
+                    <div class="stat-label">Total P&L</div>
+                    <div class="stat-value pnl-positive" id="simTotalPnl">$0.00</div>
+                </div>
+                <div class="sim-stat">
+                    <div class="stat-label">Trades</div>
+                    <div class="stat-value" id="simTradeCount">0</div>
+                </div>
+            </div>
+            <button class="btn btn-danger" id="btnResetSim">🔄 Reset Simulation</button>
+        </section>
+
+        <!-- Market Selector -->
+        <section class="market-selector">
+            <h2>📊 Pilih Market</h2>
+            <select id="marketSelect">
+                <option value="">Loading markets...</option>
+            </select>
+        </section>
+
+        <!-- Price Monitor -->
+        <section class="price-monitor">
+            <h2>💹 Bid/Ask Monitor (Cents)</h2>
+            <div class="price-grid">
+                <div class="price-card yes-card">
+                    <h3>YES Token</h3>
+                    <div class="price-display">
+                        <div class="price-label">Bid</div>
+                        <div class="price-value" id="yesBid">--</div>
+                    </div>
+                    <div class="price-display">
+                        <div class="price-label">Ask</div>
+                        <div class="price-value" id="yesAsk">--</div>
+                    </div>
+                    <div class="spread-info">
+                        Spread: <span id="yesSpread">--</span>%
+                    </div>
+                </div>
+                
+                <div class="price-card no-card">
+                    <h3>NO Token</h3>
+                    <div class="price-display">
+                        <div class="price-label">Bid</div>
+                        <div class="price-value" id="noBid">--</div>
+                    </div>
+                    <div class="price-display">
+                        <div class="price-label">Ask</div>
+                        <div class="price-value" id="noAsk">--</div>
+                    </div>
+                    <div class="spread-info">
+                        Spread: <span id="noSpread">--</span>%
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Signal Display -->
+        <section class="signal-section">
+            <h2>🎯 Trading Signal</h2>
+            <div class="signal-display" id="signalDisplay">
+                <div class="signal-indicator neutral">WAIT</div>
+                <div class="signal-confidence">Confidence: --%</div>
+                <div class="signal-reason" id="signalReason">Waiting for data...</div>
+            </div>
+        </section>
+
+        <!-- Order Panel -->
+        <section class="order-panel">
+            <h2>📝 Place Order</h2>
+            
+            <div class="order-type-selector">
+                <button class="order-type-btn active" data-type="ONE_TAP">1-Tap</button>
+                <button class="order-type-btn" data-type="MARKET">Market</button>
+                <button class="order-type-btn" data-type="LIMIT">Limit</button>
+            </div>
+
+            <div class="order-form">
+                <div class="form-group limit-price-group" style="display: none;">
+                    <label for="limitPrice">Limit Price (cents):</label>
+                    <input type="number" id="limitPrice" min="1" max="99" step="1" value="50">
+                </div>
+
+                <div class="form-group">
+                    <label for="orderSize">Size (USD):</label>
+                    <input type="number" id="orderSize" min="1" step="1" value="100">
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-yes" id="btnBuyYes">
+                        BUY YES 📈
+                    </button>
+                    <button class="btn btn-no" id="btnBuyNo">
+                        BUY NO 📉
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Take Profit / Stop Loss -->
+        <section class="tp-sl-section">
+            <h2>🛡️ Take Profit & Stop Loss</h2>
+            <div class="tp-sl-form">
+                <div class="form-group">
+                    <label for="tpPercent">Take Profit (%):</label>
+                    <input type="number" id="tpPercent" min="1" max="100" step="1" value="20">
+                </div>
+                <div class="form-group">
+                    <label for="slPercent">Stop Loss (%):</label>
+                    <input type="number" id="slPercent" min="1" max="100" step="1" value="10">
+                </div>
+                <button class="btn btn-secondary" id="btnSetTpSl">
+                    Set TP/SL
+                </button>
+            </div>
+            <div class="tp-sl-status" id="tpSlStatus">
+                No active TP/SL orders
+            </div>
+        </section>
+
+        <!-- P&L Calculator -->
+        <section class="pnl-section">
+            <h2>💰 Profit & Loss</h2>
+            <div class="pnl-display">
+                <div class="pnl-item">
+                    <div class="pnl-label">Total Invested</div>
+                    <div class="pnl-value" id="totalInvested">$0.00</div>
+                </div>
+                <div class="pnl-item">
+                    <div class="pnl-label">Current Value</div>
+                    <div class="pnl-value" id="currentValue">$0.00</div>
+                </div>
+                <div class="pnl-item">
+                    <div class="pnl-label">Total P&L</div>
+                    <div class="pnl-value pnl-positive" id="totalPnl">$0.00</div>
+                </div>
+                <div class="pnl-item">
+                    <div class="pnl-label">ROI</div>
+                    <div class="pnl-value pnl-positive" id="totalRoi">0.00%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Positions -->
+        <section class="positions-section">
+            <h2>📦 Open Positions</h2>
+            <div class="positions-list" id="positionsList">
+                <div class="empty-state">No open positions</div>
+            </div>
+        </section>
+
+        <!-- Balance -->
+        <section class="balance-section">
+            <h2>💵 Account Balance</h2>
+            <div class="balance-display" id="balanceDisplay">
+                Loading...
+            </div>
+        </section>
+
+        <!-- Trade History (Simulation) -->
+        <section class="trade-history-section" id="tradeHistorySection" style="display: none;">
+            <h2>📜 Trade History</h2>
+            <div class="trade-history-list" id="tradeHistoryList">
+                <div class="empty-state">No trades yet</div>
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
