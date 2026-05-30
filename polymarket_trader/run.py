@@ -173,7 +173,7 @@ start_background_tasks()
 @app.route('/')
 def index():
     """Main page"""
-    return render_template('index.html', simulation_mode=simulation_mode)
+    return render_template('index.html', simulation_mode=simulation_mode, config=config)
 
 
 @app.route('/api/markets')
@@ -362,6 +362,6 @@ def handle_disconnect():
 
 if __name__ == '__main__':
     try:
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+        socketio.run(app, host='0.0.0.0', port=config.PORT, debug=(config.FLASK_ENV == 'development'))
     finally:
         running = False
