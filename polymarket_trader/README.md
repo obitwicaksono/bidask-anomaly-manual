@@ -35,20 +35,38 @@ polymarket_trader/
 └── run.py                 # Entry point aplikasi
 ```
 
-## Instalasi
+## Instalasi (Ubuntu/Linux)
 
 ### Prasyarat
 - Python 3.8 atau lebih baru
-- pip (Python package manager)
+- pip dan python3-venv
+- Ubuntu/Debian Linux
 
 ### Langkah-langkah
 
-1. **Install dependencies:**
+1. **Install dependencies sistem:**
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv build-essential libssl-dev
+```
+
+2. **Buat dan aktivasi virtual environment:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Upgrade pip:**
+```bash
+pip install --upgrade pip
+```
+
+4. **Install dependencies Python:**
 ```bash
 pip install -r requirements.txt
 ```
 
-2. **Konfigurasi Environment Variables:**
+5. **Konfigurasi Environment Variables:**
 
    Salin file contoh dan edit dengan kredensial Anda:
    ```bash
@@ -74,12 +92,27 @@ pip install -r requirements.txt
 
    > **⚠️ PENTING:** Jangan commit file `.env` ke repository publik! File ini sudah ada di `.gitignore`.
 
-3. **Jalankan aplikasi:**
+6. **Jalankan aplikasi:**
 ```bash
 python run.py
 ```
 
-4. **Buka browser** di `http://localhost:5000`
+7. **Buka browser** di `http://localhost:5000`
+
+### Menonaktifkan Virtual Environment
+
+Setelah selesai menggunakan, keluar dari virtual environment:
+```bash
+deactivate
+```
+
+### Menjalankan Ulang Aplikasi
+
+Setiap kali ingin menjalankan aplikasi:
+```bash
+source venv/bin/activate
+python run.py
+```
 
 ## Cara Menggunakan
 
@@ -119,6 +152,7 @@ python run.py
 - Trading melibatkan risiko, gunakan dengan bijak
 - Gunakan simulation mode untuk testing strategi sebelum trading dengan uang asli
 - Aplikasi ini menggunakan Polymarket CLOB V2 API untuk live trading
+- **Dioptimalkan untuk Ubuntu/Linux** dengan virtual environment (venv)
 
 ## Troubleshooting
 
@@ -132,8 +166,26 @@ python run.py
 - Atau matikan aplikasi lain yang menggunakan port tersebut
 
 **Masalah: ModuleNotFoundError**
-- Pastikan Anda sudah mengaktifkan virtual environment (jika digunakan)
+- Pastikan virtual environment sudah aktif: `source venv/bin/activate`
 - Jalankan ulang `pip install -r requirements.txt`
+
+**Masalah: pip tidak ditemukan**
+- Install pip: `sudo apt install python3-pip`
+
+**Masalah: python3-venv tidak ditemukan**
+- Install: `sudo apt install python3-venv`
+
+**Masalah: Permission denied saat install packages**
+- Pastikan virtual environment aktif
+- Jangan gunakan `sudo pip`, gunakan `pip` biasa dalam venv
+
+**Masalah: Error numpy build**
+- Di Ubuntu dengan venv, numpy akan terinstall otomatis sebagai binary wheel
+- Jika masih error, pastikan `build-essential` sudah terinstall: `sudo apt install build-essential`
+
+**Masalah: Eventlet deprecation warning**
+- Warning ini normal dan tidak mempengaruhi fungsionalitas
+- Aplikasi tetap berjalan dengan baik menggunakan eventlet async mode
 
 ## Lisensi
 
